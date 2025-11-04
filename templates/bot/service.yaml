@@ -1,0 +1,23 @@
+{{- if and .Values.bot.enabled .Values.bot.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "lissto.fullname" . }}-bot
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.bot.labels" . | nindent 4 }}
+  {{- with .Values.bot.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.bot.service.type }}
+  ports:
+  - port: {{ .Values.bot.service.port }}
+    targetPort: {{ .Values.bot.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "lissto.bot.selectorLabels" . | nindent 4 }}
+{{- end }}
+

@@ -1,0 +1,95 @@
+{{- if .Values.bot.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lissto.fullname" . }}-bot
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.bot.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.bot.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "lissto.bot.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/bot/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "lissto.bot.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.bot.securityContext | nindent 8 }}
+      containers:
+      - name: bot
+        image: {{ include "lissto.bot.image" . }}
+        imagePullPolicy: {{ .Values.bot.image.pullPolicy | default (include "lissto.imagePullPolicy" .) }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.bot.service.targetPort }}
+          protocol: TCP
+        securityContext:
+          {{- toYaml .Values.bot.containerSecurityContext | nindent 10 }}
+        {{- if .Values.bot.healthCheck.enabled }}
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import requests; requests.get('https://www.slack.com/api/api.test')"
+          initialDelaySeconds: {{ .Values.bot.healthCheck.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.bot.healthCheck.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.bot.healthCheck.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.bot.healthCheck.livenessProbe.failureThreshold }}
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import requests; requests.get('https://www.slack.com/api/api.test')"
+          initialDelaySeconds: {{ .Values.bot.healthCheck.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.bot.healthCheck.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.bot.healthCheck.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.bot.healthCheck.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.bot.resources | nindent 10 }}
+        env:
+        - name: SLACK_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ if .Values.bot.slack.existingSecret }}{{ .Values.bot.slack.existingSecret }}{{ else }}{{ include "lissto.fullname" . }}-bot{{ end }}
+              key: slack-bot-token
+        - name: SLACK_APP_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ if .Values.bot.slack.existingSecret }}{{ .Values.bot.slack.existingSecret }}{{ else }}{{ include "lissto.fullname" . }}-bot{{ end }}
+              key: slack-app-token
+        - name: SLACK_SIGNING_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ if .Values.bot.slack.existingSecret }}{{ .Values.bot.slack.existingSecret }}{{ else }}{{ include "lissto.fullname" . }}-bot{{ end }}
+              key: slack-signing-secret
+        - name: LISSTO_API_URL
+          value: {{ .Values.config.data.api.server.url | quote }}
+        {{- with .Values.bot.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.bot.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.bot.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.bot.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+

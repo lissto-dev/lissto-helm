@@ -1,0 +1,19 @@
+apiVersion: v2
+name: lissto
+description: A Helm chart for Lissto - Kubernetes stack management platform
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - lissto
+  - kubernetes
+  - stack-management
+  - docker-compose
+home: https://github.com/lissto-dev/lissto
+sources:
+  - https://github.com/lissto-dev/controller
+  - https://github.com/lissto-dev/api
+  - https://github.com/lissto-dev/slack-bot
+maintainers:
+  - name: Lissto Team
+    email: team@lissto.dev

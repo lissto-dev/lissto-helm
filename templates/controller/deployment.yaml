@@ -1,0 +1,85 @@
+{{- if .Values.controller.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lissto.fullname" . }}-controller
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.controller.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "lissto.controller.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        checksum/config: {{ include (print $.Template.BasePath "/config/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "lissto.controller.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "lissto.controller.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.controller.securityContext | nindent 8 }}
+      containers:
+      - name: manager
+        image: {{ include "lissto.controller.image" . }}
+        imagePullPolicy: {{ .Values.controller.image.pullPolicy | default (include "lissto.imagePullPolicy" .) }}
+        command:
+        - /manager
+        args:
+        {{- if .Values.controller.leaderElect }}
+        - --leader-elect
+        {{- end }}
+        - --health-probe-bind-address={{ .Values.controller.healthProbe.bindAddress }}
+        {{- if .Values.config.enabled }}
+        - --config-path=/etc/lissto/config.yaml
+        {{- end }}
+        securityContext:
+          {{- toYaml .Values.controller.containerSecurityContext | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: {{ .Values.controller.healthProbe.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.controller.healthProbe.livenessProbe.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: {{ .Values.controller.healthProbe.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.controller.healthProbe.readinessProbe.periodSeconds }}
+        resources:
+          {{- toYaml .Values.controller.resources | nindent 10 }}
+        {{- if .Values.config.enabled }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/lissto
+          readOnly: true
+        {{- end }}
+      {{- if .Values.config.enabled }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.config.name }}
+      {{- end }}
+      terminationGracePeriodSeconds: 10
+      {{- with .Values.controller.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+

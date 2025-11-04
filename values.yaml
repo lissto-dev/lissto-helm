@@ -1,0 +1,292 @@
+# Default values for lissto
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  # Image registry for all components
+  imageRegistry: lissto
+  imagePullPolicy: IfNotPresent
+  # Image pull secrets for private registries
+  imagePullSecrets: []
+  # - name: regcred
+
+# Controller configuration
+controller:
+  enabled: true
+  name: controller
+  image:
+    repository: controller
+    tag: latest
+    pullPolicy: ""  # Uses global.imagePullPolicy if empty
+  
+  replicaCount: 1
+  
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  
+  # Leader election settings
+  leaderElect: true
+  
+  # Health probe settings
+  healthProbe:
+    bindAddress: ":8081"
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - "ALL"
+  
+  # Service account
+  serviceAccount:
+    create: true
+    name: controller-manager
+    annotations: {}
+  
+  # RBAC
+  rbac:
+    create: true
+  
+  # Node selector
+  nodeSelector: {}
+  
+  # Tolerations
+  tolerations: []
+  
+  # Affinity
+  affinity: {}
+
+# API configuration
+api:
+  enabled: true
+  name: api
+  image:
+    repository: api
+    tag: latest
+    pullPolicy: ""  # Uses global.imagePullPolicy if empty
+  
+  replicaCount: 1
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    annotations: {}
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - "ALL"
+  
+  # Health check configuration
+  healthCheck:
+    enabled: true
+    path: /health
+    port: 8080
+    livenessProbe:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+  
+  # Ingress configuration
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: api.lissto.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+    #  - secretName: lissto-api-tls
+    #    hosts:
+    #      - api.lissto.local
+  
+  # API Keys configuration
+  # apiKeys:
+    # Existing secret name containing api-keys.yaml
+    # existingSecret: ""
+    # Or provide inline configuration
+    # config: |
+    #   keys:
+    #     - key: "default-admin-key"
+    #       name: "Default Admin"
+    #       roles:
+    #         - admin
+  
+  # Environment variables
+  env: []
+  # - name: CUSTOM_VAR
+  #   value: "custom-value"
+  
+  # Node selector
+  nodeSelector: {}
+  
+  # Tolerations
+  tolerations: []
+  
+  # Affinity
+  affinity: {}
+
+# Slack Bot configuration
+bot:
+  enabled: true
+  name: bot
+  image:
+    repository: slack-bot
+    tag: latest
+    pullPolicy: ""  # Uses global.imagePullPolicy if empty
+  
+  replicaCount: 1
+  
+  service:
+    enabled: false
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    readOnlyRootFilesystem: false  # Bot may need to write temporary files
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - "ALL"
+  
+  # Health check configuration
+  healthCheck:
+    enabled: true
+    livenessProbe:
+      initialDelaySeconds: 40
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+    readinessProbe:
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+  
+  # Slack configuration
+  slack:
+    # Use existing secret for Slack credentials
+    existingSecret: ""
+    # Or create a new secret with these values
+    # format: xoxb-...
+    botToken: ""
+    # format: xapp-1-...
+    appToken: ""
+    # signingSecret: ""
+  
+  # Environment variables
+  env: []
+  # - name: CUSTOM_VAR
+  #   value: "custom-value"
+  
+  # Node selector
+  nodeSelector: {}
+  
+  # Tolerations
+  tolerations: []
+  
+  # Affinity
+  affinity: {}
+
+# Configuration for Lissto
+config:
+  enabled: true
+  # ConfigMap name
+  name: lissto-config
+  
+  # Configuration content (will be mounted as config.yaml)
+  data:
+    api:
+      server:
+        url: "http://lissto-api:8080"
+    
+    logging:
+      level: "info"
+    
+    namespaces:
+      global: "lissto-global"
+      developerPrefix: "dev-"
+      autoCreatePrefix: true
+    
+    repos:
+      main:
+        url: "https://github.com/example/repo"
+        name: "Main Repository"
+        branches: ["main"]
+        tags:
+          prefix: "v"
+    
+    stacks:
+      global:
+        images:
+          registry: "lissto/"
+          repositoryPrefix: "lissto-dev/"
+      public:
+        ingressClass: "nginx"
+        hostSuffix: ".env.lissto.dev"
+
+# CRDs (Custom Resource Definitions)
+crds:
+  # Install CRDs
+  install: true
+  # Keep CRDs on uninstall (recommended for production)
+  keep: true
+
+# Namespace configuration
+namespaceOverride: ""
+

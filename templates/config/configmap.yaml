@@ -1,0 +1,13 @@
+{{- if .Values.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.config.name }}
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    {{- toYaml .Values.config.data | nindent 4 }}
+{{- end }}
+
