@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/api/secret-apikeys.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/config/configmap.yaml") . | sha256sum }}
       labels:
         {{- include "lissto.api.selectorLabels" . | nindent 8 }}
     spec:
@@ -22,12 +22,17 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      serviceAccountName: {{ include "lissto.fullname" . }}-api
       securityContext:
         {{- toYaml .Values.api.securityContext | nindent 8 }}
       containers:
       - name: api
         image: {{ include "lissto.api.image" . }}
         imagePullPolicy: {{ .Values.api.image.pullPolicy | default (include "lissto.imagePullPolicy" .) }}
+        command: ["./main"]
+        args:
+        - --config-path=/etc/lissto/config.yaml
+        - --in-cluster=true
         ports:
         - name: http
           containerPort: {{ .Values.api.service.targetPort }}
@@ -57,18 +62,25 @@ spec:
         env:
         - name: PORT
           value: {{ .Values.api.service.targetPort | quote }}
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         {{- with .Values.api.env }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         volumeMounts:
-        - name: api-keys
-          mountPath: /root/api-keys.yaml
-          subPath: api-keys.yaml
+        - name: config
+          mountPath: /etc/lissto
           readOnly: true
+        - name: tmp
+          mountPath: /tmp
       volumes:
-      - name: api-keys
-        secret:
-          secretName: {{ if and .Values.api.apiKeys .Values.api.apiKeys.existingSecret }}{{ .Values.api.apiKeys.existingSecret }}{{ else }}{{ include "lissto.fullname" . }}-api-keys{{ end }}
+      - name: config
+        configMap:
+          name: {{ .Values.config.name }}
+      - name: tmp
+        emptyDir: {}
       {{- with .Values.api.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -80,6 +92,9 @@ spec:
       {{- with .Values.api.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.api.hostNetwork }}
+      hostNetwork: true
       {{- end }}
 {{- end }}
 
