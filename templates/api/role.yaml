@@ -1,0 +1,25 @@
+{{- if .Values.api.enabled }}
+# Role for API namespace - secret access for API keys
+# This Role grants secret management permissions in the API's own namespace
+# CRD access is granted cluster-wide via ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "lissto.fullname" . }}-api-secrets
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.api.labels" . | nindent 4 }}
+rules:
+# Secret management (for API keys in API's own namespace)
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - patch
+{{- end }}
+

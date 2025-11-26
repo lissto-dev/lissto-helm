@@ -17,6 +17,25 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
   - persistentvolumeclaims
   - services
   verbs:
@@ -44,6 +63,8 @@ rules:
   resources:
   - blueprints
   - envs
+  - lisstosecrets
+  - lisstovariables
   - stacklifecycles
   - stacks
   verbs:
@@ -67,6 +88,8 @@ rules:
   resources:
   - blueprints/status
   - envs/status
+  - lisstosecrets/status
+  - lisstovariables/status
   - stacklifecycles/status
   - stacks/status
   verbs:
