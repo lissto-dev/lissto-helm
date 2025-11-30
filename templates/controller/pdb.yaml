@@ -1,0 +1,20 @@
+{{- if and .Values.controller.enabled .Values.controller.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "lissto.fullname" . }}-controller
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.controller.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.controller.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.controller.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.controller.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.controller.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "lissto.controller.selectorLabels" . | nindent 6 }}
+{{- end }}
+

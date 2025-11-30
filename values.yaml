@@ -73,6 +73,12 @@ controller:
   
   # Affinity
   affinity: {}
+  
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+    # maxUnavailable: 1  # Use either minAvailable or maxUnavailable, not both
 
 # API configuration
 api:
@@ -169,6 +175,12 @@ api:
   
   # Affinity
   affinity: {}
+  
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+    # maxUnavailable: 1  # Use either minAvailable or maxUnavailable, not both
 
 # Slack Bot configuration
 bot:
@@ -242,6 +254,12 @@ bot:
   
   # Affinity
   affinity: {}
+  
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+    # maxUnavailable: 1  # Use either minAvailable or maxUnavailable, not both
 
 # Configuration for Lissto
 config:
@@ -262,7 +280,6 @@ config:
     namespaces:
       global: "lissto-global"
       developerPrefix: "dev-"
-      autoCreatePrefix: true
     
     repos: {}
       # main:
