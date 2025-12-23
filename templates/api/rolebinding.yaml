@@ -1,0 +1,21 @@
+{{- if .Values.api.enabled }}
+# RoleBinding for API namespace - secret access for API keys
+# Binds the secret management Role to the API ServiceAccount in its own namespace
+# CRD access is granted cluster-wide via ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "lissto.fullname" . }}-api-secrets
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.api.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "lissto.fullname" . }}-api-secrets
+subjects:
+- kind: ServiceAccount
+  name: {{ include "lissto.fullname" . }}-api
+  namespace: {{ include "lissto.namespace" . }}
+{{- end }}
+

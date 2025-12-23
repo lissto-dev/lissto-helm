@@ -1,0 +1,22 @@
+{{- if and .Values.bot.enabled .Values.bot.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "lissto.fullname" . }}-bot
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.bot.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.bot.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.bot.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.bot.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.bot.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "lissto.bot.selectorLabels" . | nindent 6 }}
+{{- end }}
+
+
+

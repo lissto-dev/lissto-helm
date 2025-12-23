@@ -1,0 +1,66 @@
+{{- if .Values.api.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "lissto.fullname" . }}-api
+  labels:
+    {{- include "lissto.api.labels" . | nindent 4 }}
+rules:
+# Minimal cluster-wide permissions - namespace discovery and serviceaccount access
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+  - create  # Needed to create namespaces that match the prefix pattern
+# ServiceAccount access (needed for k8schain image authentication)
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - get
+  - list
+# ConfigMap access (needed for stack manifests)
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - patch
+  - delete
+# Secret access (needed for image pull secrets via k8schain and LisstoSecret management)
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - patch
+  - delete
+# LisstoVariable and LisstoSecret access
+- apiGroups:
+  - env.lissto.dev
+  resources:
+  - lisstovariables
+  - lisstosecrets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+{{- end }}
+

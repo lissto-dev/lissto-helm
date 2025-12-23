@@ -1,0 +1,100 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lissto.fullname" . }}-api
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.api.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "lissto.api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "lissto.api.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "lissto.fullname" . }}-api
+      securityContext:
+        {{- toYaml .Values.api.securityContext | nindent 8 }}
+      containers:
+      - name: api
+        image: {{ include "lissto.api.image" . }}
+        imagePullPolicy: {{ .Values.api.image.pullPolicy | default (include "lissto.imagePullPolicy" .) }}
+        command: ["./main"]
+        args:
+        - --config-path=/etc/lissto/config.yaml
+        - --in-cluster=true
+        ports:
+        - name: http
+          containerPort: {{ .Values.api.service.targetPort }}
+          protocol: TCP
+        securityContext:
+          {{- toYaml .Values.api.containerSecurityContext | nindent 10 }}
+        {{- if .Values.api.healthCheck.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.api.healthCheck.path }}
+            port: {{ .Values.api.healthCheck.port }}
+          initialDelaySeconds: {{ .Values.api.healthCheck.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.api.healthCheck.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.api.healthCheck.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.api.healthCheck.livenessProbe.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.api.healthCheck.path }}
+            port: {{ .Values.api.healthCheck.port }}
+          initialDelaySeconds: {{ .Values.api.healthCheck.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.api.healthCheck.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.api.healthCheck.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.api.healthCheck.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.api.resources | nindent 10 }}
+        env:
+        - name: PORT
+          value: {{ .Values.api.service.targetPort | quote }}
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        {{- with .Values.api.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/lissto
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.config.name }}
+      - name: tmp
+        emptyDir: {}
+      {{- with .Values.api.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.api.hostNetwork }}
+      hostNetwork: true
+      {{- end }}
+{{- end }}
+

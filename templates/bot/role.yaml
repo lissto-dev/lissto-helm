@@ -1,0 +1,31 @@
+{{- if .Values.bot.enabled }}
+# Role for bot namespace - secret management for user API key mappings
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "lissto.fullname" . }}-bot
+  namespace: {{ include "lissto.namespace" . }}
+  labels:
+    {{- include "lissto.bot.labels" . | nindent 4 }}
+rules:
+# Secret management for Slack user to API key mappings
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - patch
+# ConfigMap access for configuration
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+{{- end }}
+

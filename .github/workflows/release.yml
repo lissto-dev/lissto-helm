@@ -1,0 +1,110 @@
+name: Release Helm Chart
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Chart version to release (e.g., 0.1.0)'
+        required: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.13.0
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Chart version from tag
+        run: |
+          echo "Replacing placeholder with version: ${{ steps.version.outputs.VERSION }}"
+          sed -i "s/^version:.*/version: ${{ steps.version.outputs.VERSION }}/" Chart.yaml
+          grep "^version:" Chart.yaml
+          echo "✓ Chart.yaml updated (not committed - for packaging only)"
+
+      - name: Package Helm chart
+        run: |
+          mkdir -p .cr-release-packages
+          helm package . -d .cr-release-packages
+          # Copy index.html to release packages for later use
+          cp docs/index.html .cr-release-packages/
+
+      - name: Checkout gh-pages
+        run: |
+          git fetch origin gh-pages || git checkout --orphan gh-pages
+          git checkout gh-pages || git checkout --orphan gh-pages
+          git pull origin gh-pages || true
+
+      - name: Update chart repository
+        run: |
+          # Create index directory if it doesn't exist
+          mkdir -p charts
+          
+          # Copy new package
+          cp .cr-release-packages/*.tgz charts/
+          
+          # Generate index
+          helm repo index charts --url https://lissto-dev.github.io/lissto/charts
+          
+          # Copy index.html from release packages
+          cp .cr-release-packages/index.html index.html
+
+      - name: Commit and push to gh-pages
+        run: |
+          git add charts/ index.html
+          git commit -m "Release chart version ${{ steps.version.outputs.VERSION }}" || echo "No changes to commit"
+          git push origin gh-pages
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: .cr-release-packages/*.tgz
+          body: |
+            ## Helm Chart Release ${{ steps.version.outputs.VERSION }}
+            
+            ### Installation
+            
+            ```bash
+            helm repo add lissto https://lissto-dev.github.io/lissto/charts
+            helm repo update
+            helm install lissto lissto/lissto --version ${{ steps.version.outputs.VERSION }} --namespace lissto-system --create-namespace
+            ```
+            
+            ### What's Changed
+            
+            See [CHANGELOG.md](https://github.com/lissto-dev/lissto/blob/main/lissto-helm/CHANGELOG.md) for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+

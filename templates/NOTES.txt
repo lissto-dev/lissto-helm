@@ -1,0 +1,70 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+  $ helm get all {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+Components installed:
+{{- if .Values.controller.enabled }}
+  ✓ Controller (Operator)
+{{- end }}
+{{- if .Values.api.enabled }}
+  ✓ API Server
+{{- end }}
+{{- if .Values.bot.enabled }}
+  ✓ Slack Bot
+{{- end }}
+{{- if .Values.config.enabled }}
+  ✓ Configuration (ConfigMap)
+{{- end }}
+{{- if .Values.crds.install }}
+  ✓ Custom Resource Definitions (CRDs)
+{{- end }}
+
+{{- if .Values.api.enabled }}
+
+API Service:
+  Name: {{ include "lissto.fullname" . }}-api
+  Port: {{ .Values.api.service.port }}
+  
+  To access the API from within the cluster:
+    http://{{ include "lissto.fullname" . }}-api.{{ include "lissto.namespace" . }}.svc.cluster.local:{{ .Values.api.service.port }}
+
+{{- if .Values.api.ingress.enabled }}
+  External URL:
+  {{- range .Values.api.ingress.hosts }}
+    http{{ if $.Values.api.ingress.tls }}s{{ end }}://{{ .host }}
+  {{- end }}
+{{- else }}
+  
+  To access the API from outside the cluster:
+    kubectl port-forward -n {{ include "lissto.namespace" . }} svc/{{ include "lissto.fullname" . }}-api {{ .Values.api.service.port }}:{{ .Values.api.service.port }}
+    Then access: http://localhost:{{ .Values.api.service.port }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.controller.enabled }}
+
+Controller Status:
+  Check the controller logs:
+    kubectl logs -n {{ include "lissto.namespace" . }} -l control-plane=controller-manager -f
+{{- end }}
+
+{{- if .Values.bot.enabled }}
+
+Slack Bot:
+  Check the bot logs:
+    kubectl logs -n {{ include "lissto.namespace" . }} -l {{ include "lissto.bot.selectorLabels" . | replace "\n" "," }} -f
+  
+  {{- if not .Values.bot.slack.existingSecret }}
+  NOTE: Please configure your Slack tokens in the values.yaml or use an existing secret.
+  {{- end }}
+{{- end }}
+
+For more information about Lissto, visit:
+  - Documentation: https://github.com/lissto-dev/lissto
+  - Issues: https://github.com/lissto-dev/lissto/issues
+

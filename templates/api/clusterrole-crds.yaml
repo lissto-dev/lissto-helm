@@ -1,0 +1,40 @@
+{{- if .Values.api.enabled }}
+# ClusterRole for developer namespaces
+# Applied to ALL namespaces via ClusterRoleBinding
+# Note: No secret access - only CRD management
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "lissto.fullname" . }}-api-crds
+  labels:
+    {{- include "lissto.api.labels" . | nindent 4 }}
+rules:
+# CRD management in all namespaces (no secrets access)
+- apiGroups:
+  - env.lissto.dev
+  resources:
+  - blueprints
+  - envs
+  - stacks
+  - stacklifecycles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - env.lissto.dev
+  resources:
+  - blueprints/status
+  - envs/status
+  - stacks/status
+  - stacklifecycles/status
+  verbs:
+  - get
+  - patch
+  - update
+{{- end }}
+
