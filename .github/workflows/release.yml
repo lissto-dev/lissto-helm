@@ -54,6 +54,8 @@ jobs:
         run: |
           mkdir -p .cr-release-packages
           helm package . -d .cr-release-packages
+          # Copy index.html to release packages for later use
+          cp docs/index.html .cr-release-packages/
 
       - name: Checkout gh-pages
         run: |
@@ -72,9 +74,8 @@ jobs:
           # Generate index
           helm repo index charts --url https://lissto-dev.github.io/lissto/charts
           
-          # Copy index.html from docs/ directory
-          git checkout main -- docs/index.html
-          cp docs/index.html index.html
+          # Copy index.html from release packages
+          cp .cr-release-packages/index.html index.html
 
       - name: Commit and push to gh-pages
         run: |
