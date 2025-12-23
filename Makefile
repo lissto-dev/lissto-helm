@@ -81,10 +81,35 @@ package: validate ## Package the Helm chart
 	@helm package $(CHART_DIR)
 	@echo "$(COLOR_GREEN)✓ Chart packaged successfully$(COLOR_RESET)"
 
+release: validate ## Package and prepare chart for release
+	@echo "$(COLOR_BOLD)$(COLOR_BLUE)Preparing chart release...$(COLOR_RESET)"
+	@mkdir -p releases
+	@helm package $(CHART_DIR) -d releases
+	@helm repo index releases --url https://lissto-dev.github.io/lissto/charts
+	@echo "$(COLOR_GREEN)✓ Chart release prepared in releases/$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)Next steps:$(COLOR_RESET)"
+	@echo "  1. Review changes"
+	@echo "  2. Run 'make publish-release' to publish to GitHub Pages"
+	@echo "  3. Or push a git tag: git tag chart-v<version> && git push origin chart-v<version>"
+
+publish-release: ## Publish release to gh-pages (manual)
+	@echo "$(COLOR_BOLD)$(COLOR_BLUE)Publishing release to gh-pages...$(COLOR_RESET)"
+	@if [ ! -d "releases" ]; then echo "$(COLOR_YELLOW)Run 'make release' first$(COLOR_RESET)"; exit 1; fi
+	@git checkout gh-pages || git checkout --orphan gh-pages
+	@mkdir -p charts
+	@cp releases/*.tgz charts/
+	@cp releases/index.yaml charts/
+	@git add charts/
+	@git commit -m "Update chart repository" || echo "No changes to commit"
+	@git push origin gh-pages
+	@git checkout -
+	@echo "$(COLOR_GREEN)✓ Release published to GitHub Pages$(COLOR_RESET)"
+
 clean: ## Clean generated files
 	@echo "$(COLOR_BOLD)$(COLOR_YELLOW)Cleaning generated files...$(COLOR_RESET)"
 	@rm -f *.tgz
 	@rm -f lissto-manifests.yaml
+	@rm -rf releases
 	@echo "$(COLOR_GREEN)✓ Cleaned successfully$(COLOR_RESET)"
 
 test-controller: ## Test with controller only

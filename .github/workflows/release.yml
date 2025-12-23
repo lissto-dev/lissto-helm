@@ -3,7 +3,7 @@ name: Release Helm Chart
 on:
   push:
     tags:
-      - 'chart-v*.*.*'
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -72,41 +72,9 @@ jobs:
           # Generate index
           helm repo index charts --url https://lissto-dev.github.io/lissto/charts
           
-          # Create index.html if it doesn't exist
-          if [ ! -f index.html ]; then
-            cat > index.html <<EOF
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Lissto Helm Charts</title>
-              <style>
-                  body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-                  h1 { color: #333; }
-                  pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
-                  code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
-              </style>
-          </head>
-          <body>
-              <h1>Lissto Helm Charts</h1>
-              <p>Deploy the Lissto Platform on Kubernetes with ease.</p>
-              
-              <h2>Usage</h2>
-              <pre><code># Add the Helm repository
-          helm repo add lissto https://lissto-dev.github.io/lissto/charts
-          helm repo update
-
-          # Install Lissto
-          helm install lissto lissto/lissto --namespace lissto-system --create-namespace</code></pre>
-              
-              <h2>Available Charts</h2>
-              <ul>
-                  <li><a href="charts/index.yaml">Repository Index</a></li>
-                  <li><a href="https://github.com/lissto-dev/lissto">GitHub Repository</a></li>
-              </ul>
-          </body>
-          </html>
-          EOF
-          fi
+          # Copy index.html from docs/ directory
+          git checkout main -- docs/index.html
+          cp docs/index.html index.html
 
       - name: Commit and push to gh-pages
         run: |
