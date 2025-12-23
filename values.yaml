@@ -290,13 +290,18 @@ config:
       #     prefix: "v"
     
     stacks:
-      global:
-        images:
-          registry: "lissto/"
-          repositoryPrefix: "lissto-dev/"
-      public:
-        ingressClass: "nginx"
-        hostSuffix: ".env.lissto.dev"
+      images:
+        registry: "lissto/"
+        repositoryPrefix: "lissto-dev/"
+      ingress:
+        internal:
+          ingressClass: "nginx"
+          hostSuffix: ".env.lissto.dev"
+          tlsSecret: "wildcard-tls"
+        # internet:
+        #   ingressClass: "nginx-public"
+        #   hostSuffix: ".env-public.lissto.dev"
+        #   tlsSecret: "wildcard-public-tls"
 
 # CRDs (Custom Resource Definitions)
 crds:
