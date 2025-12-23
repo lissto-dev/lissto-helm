@@ -2,7 +2,9 @@ apiVersion: v2
 name: lissto
 description: A Helm chart for Lissto - Kubernetes stack management platform
 type: application
-version: 0.1.0
+# Version is automatically set from git tags (v*) during release workflow
+# This placeholder is replaced during packaging, never committed
+version: 0.0.0-dev
 appVersion: "latest"
 keywords:
   - lissto
