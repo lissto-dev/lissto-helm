@@ -63,6 +63,8 @@ helm install lissto lissto/lissto \
 
 ### Enable API Ingress
 
+**Single Ingress (Legacy Mode):**
+
 ```yaml
 # custom-values.yaml
 api:
@@ -75,6 +77,47 @@ api:
           - path: /
             pathType: Prefix
 ```
+
+**Multiple Ingresses (Recommended for Public/Private Setup):**
+
+```yaml
+# custom-values.yaml
+api:
+  ingresses:
+    # Public ingress for external access
+    public:
+      enabled: true
+      className: nginx-public
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      hosts:
+        - host: api.lissto.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: lissto-api-public-tls
+          hosts:
+            - api.lissto.example.com
+    
+    # Private ingress for internal/VPN access
+    private:
+      enabled: true
+      className: nginx-internal
+      annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8"
+      hosts:
+        - host: api-internal.lissto.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: lissto-api-private-tls
+          hosts:
+            - api-internal.lissto.example.com
+```
+
+When using multiple ingresses, each ingress creates a separate Kubernetes Ingress resource named `lissto-api-{key}` (e.g., `lissto-api-public`, `lissto-api-private`).
 
 ### Use Custom Image Registry
 
