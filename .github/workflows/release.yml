@@ -92,15 +92,24 @@ jobs:
           # Create index directory if it doesn't exist
           mkdir -p charts
           
-          # Generate index pointing to GitHub release assets
-          helm repo index charts --url https://github.com/lissto-dev/lissto-helm/releases/download/${{ github.ref_name }} --merge charts/index.yaml || helm repo index charts --url https://github.com/lissto-dev/lissto-helm/releases/download/${{ github.ref_name }}
+          # Copy existing index.yaml if it exists on gh-pages
+          if [ -f charts/index.yaml ]; then
+            cp charts/index.yaml charts/index.yaml.backup
+          fi
           
           # Copy chart package temporarily to generate proper index
           cp .cr-release-packages/*.tgz charts/
-          helm repo index charts --url https://github.com/lissto-dev/lissto-helm/releases/download/${{ github.ref_name }}
+          
+          # Generate index, merging with existing if available
+          if [ -f charts/index.yaml.backup ]; then
+            helm repo index charts --url https://github.com/lissto-dev/lissto-helm/releases/download/${{ github.ref_name }} --merge charts/index.yaml.backup
+          else
+            helm repo index charts --url https://github.com/lissto-dev/lissto-helm/releases/download/${{ github.ref_name }}
+          fi
           
           # Remove .tgz files - we'll serve from GitHub releases
           rm charts/*.tgz
+          rm -f charts/index.yaml.backup
           
           # Copy index.html and CNAME from release packages
           cp .cr-release-packages/index.html index.html
