@@ -55,34 +55,15 @@ jobs:
         run: |
           mkdir -p .cr-release-packages
           helm package . -d .cr-release-packages
-          # Copy index.html to release packages for later use
+          # Copy index.html and CNAME to release packages for later use
           cp docs/index.html .cr-release-packages/
+          cp docs/CNAME .cr-release-packages/
 
       - name: Checkout gh-pages
         run: |
           git fetch origin gh-pages || git checkout --orphan gh-pages
           git checkout gh-pages || git checkout --orphan gh-pages
           git pull origin gh-pages || true
-
-      - name: Update chart repository
-        run: |
-          # Create index directory if it doesn't exist
-          mkdir -p charts
-          
-          # Copy new package
-          cp .cr-release-packages/*.tgz charts/
-          
-          # Generate index
-          helm repo index charts --url https://lissto-dev.github.io/lissto/charts
-          
-          # Copy index.html from release packages
-          cp .cr-release-packages/index.html index.html
-
-      - name: Commit and push to gh-pages
-        run: |
-          git add charts/ index.html
-          git commit -m "Release chart version ${{ steps.version.outputs.VERSION }}" || echo "No changes to commit"
-          git push origin gh-pages
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -95,7 +76,7 @@ jobs:
             ### Installation
             
             ```bash
-            helm repo add lissto https://lissto-dev.github.io/lissto/charts
+            helm repo add lissto https://helm.lissto.dev/charts
             helm repo update
             helm install lissto lissto/lissto --version ${{ steps.version.outputs.VERSION }} --namespace lissto-system --create-namespace
             ```
@@ -105,6 +86,31 @@ jobs:
             See [CHANGELOG.md](https://github.com/lissto-dev/lissto/blob/main/lissto-helm/CHANGELOG.md) for details.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update chart repository
+        run: |
+          # Create index directory if it doesn't exist
+          mkdir -p charts
+          
+          # Generate index pointing to GitHub release assets
+          helm repo index charts --url https://github.com/lissto-dev/lissto-helm/releases/download/${{ github.ref_name }} --merge charts/index.yaml || helm repo index charts --url https://github.com/lissto-dev/lissto-helm/releases/download/${{ github.ref_name }}
+          
+          # Copy chart package temporarily to generate proper index
+          cp .cr-release-packages/*.tgz charts/
+          helm repo index charts --url https://github.com/lissto-dev/lissto-helm/releases/download/${{ github.ref_name }}
+          
+          # Remove .tgz files - we'll serve from GitHub releases
+          rm charts/*.tgz
+          
+          # Copy index.html and CNAME from release packages
+          cp .cr-release-packages/index.html index.html
+          cp .cr-release-packages/CNAME CNAME
+
+      - name: Commit and push to gh-pages
+        run: |
+          git add charts/index.yaml index.html CNAME
+          git commit -m "Release chart version ${{ steps.version.outputs.VERSION }}" || echo "No changes to commit"
+          git push origin gh-pages
 
 
 

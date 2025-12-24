@@ -14,7 +14,7 @@ Deploy the Lissto Platform on Kubernetes with ease.
 
 ```bash
 # Add the Helm repository
-helm repo add lissto https://lissto-dev.github.io/lissto/charts
+helm repo add lissto https://helm.lissto.dev/charts
 helm repo update
 
 # Install Lissto

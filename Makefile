@@ -85,7 +85,7 @@ release: validate ## Package and prepare chart for release
 	@echo "$(COLOR_BOLD)$(COLOR_BLUE)Preparing chart release...$(COLOR_RESET)"
 	@mkdir -p releases
 	@helm package $(CHART_DIR) -d releases
-	@helm repo index releases --url https://lissto-dev.github.io/lissto/charts
+	@helm repo index releases --url https://helm.lissto.dev/charts
 	@echo "$(COLOR_GREEN)✓ Chart release prepared in releases/$(COLOR_RESET)"
 	@echo "$(COLOR_YELLOW)Next steps:$(COLOR_RESET)"
 	@echo "  1. Review changes"
