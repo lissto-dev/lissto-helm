@@ -309,7 +309,8 @@ config:
     api:
       server:
         url: "http://lissto-api:8080"
-        publicUrl: "https://api.lissto.dev"
+        # update to your instance public url, for example:
+        # publicUrl: "https://api.lissto.dev"
     logging:
       level: "info"
     namespaces:
