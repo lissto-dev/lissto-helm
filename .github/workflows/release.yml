@@ -61,6 +61,8 @@ jobs:
 
       - name: Checkout gh-pages
         run: |
+          # Reset uncommitted changes (Chart.yaml was only modified for packaging)
+          git reset --hard HEAD
           git fetch origin gh-pages
           git checkout gh-pages
 
