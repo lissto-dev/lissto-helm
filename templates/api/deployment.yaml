@@ -61,7 +61,7 @@ spec:
           {{- toYaml .Values.api.resources | nindent 10 }}
         env:
         - name: PORT
-          value: {{ .Values.api.service.targetPort }}
+          value: {{ .Values.api.service.targetPort | quote }}
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
