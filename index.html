@@ -157,11 +157,11 @@ helm install lissto lissto/lissto \
             <h2>What is Lissto?</h2>
             <p>
                 Lissto is a DevEnv and DevEx(perience) platform that simplifies the development of applications on Kubernetes.
-                It bridges the gap between Docker Compose loved by developers and Kubernetes loved by DevOps and platform engineers.
+                It bridges the gap between compose loved by developers and Kubernetes loved by DevOps and platform engineers.
             </p>
 
             <div class="info-box">
-                <strong>💡 Features:</strong> Deploy Docker Compose apps to Kubernetes, manage multiple environments, 
+                <strong>💡 Features:</strong> Deploy compose apps to Kubernetes, manage multiple environments, 
                 integrated Slack bot, REST API, and custom Kubernetes operators.
             </div>
 
@@ -171,31 +171,12 @@ helm install lissto lissto/lissto \
                     <a href="charts/index.yaml">📋 Repository Index (index.yaml)</a>
                 </li>
                 <li>
-                    <a href="https://github.com/lissto-dev/lissto/tree/main/lissto-helm">📚 Chart Documentation</a>
+                    <a href="https://github.com/lissto-dev/lissto-helm/blob/main/README.md">📚 Chart Documentation</a>
                 </li>
                 <li>
-                    <a href="https://github.com/lissto-dev/lissto">🔗 GitHub Repository</a>
+                    <a href="https://github.com/lissto-dev/lissto-helm">🔗 GitHub Repository</a>
                 </li>
             </ul>
-
-            <h2>Installation Options</h2>
-            <pre><code><span class="command"># Install with custom values</span>
-helm install lissto lissto/lissto \
-  -f custom-values.yaml \
-  --namespace lissto-system \
-  --create-namespace
-
-<span class="command"># Install specific version</span>
-helm install lissto lissto/lissto \
-  --version 0.1.0 \
-  --namespace lissto-system \
-  --create-namespace
-
-<span class="command"># Disable Slack bot</span>
-helm install lissto lissto/lissto \
-  --set bot.enabled=false \
-  --namespace lissto-system \
-  --create-namespace</code></pre>
 
             <h2>Verify Installation</h2>
             <pre><code><span class="command"># Check deployment status</span>
@@ -206,7 +187,7 @@ helm search repo lissto --versions</code></pre>
         </div>
         
         <div class="footer">
-            <p>Made with ❤️ by the Lissto Team | <a href="https://github.com/lissto-dev/lissto">Contribute on GitHub</a></p>
+            <p>Made with ❤️ by the Lissto Team | <a href="https://github.com/lissto-dev/lissto-helm">Contribute on GitHub</a></p>
         </div>
     </div>
 </body>
