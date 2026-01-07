@@ -177,8 +177,8 @@ See `values.yaml` for all available options including:
 If you want to install from source for development:
 
 ```bash
-git clone https://github.com/lissto-dev/lissto.git
-cd lissto/lissto-helm
+git clone https://github.com/lissto-dev/lissto-helm.git
+cd lissto-helm
 
 # Install locally
 helm install lissto . --namespace lissto-system --create-namespace

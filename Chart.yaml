@@ -10,8 +10,8 @@ keywords:
   - lissto
   - kubernetes
   - stack-management
-  - docker-compose
-home: https://github.com/lissto-dev/lissto
+  - compose
+home: https://github.com/lissto-dev/lissto-helm
 sources:
   - https://github.com/lissto-dev/controller
   - https://github.com/lissto-dev/api

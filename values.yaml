@@ -304,21 +304,17 @@ config:
   enabled: true
   # ConfigMap name
   name: lissto-config
-  
   # Configuration content (will be mounted as config.yaml)
   data:
     api:
       server:
         url: "http://lissto-api:8080"
         publicUrl: "https://api.lissto.dev"
-    
     logging:
       level: "info"
-    
     namespaces:
       global: "lissto-global"
       developerPrefix: "dev-"
-    
     repos: {}
       # main:
       #   url: "https://github.com/example/repo"
@@ -326,7 +322,6 @@ config:
       #   branches: ["main"]
       #   tags:
       #     prefix: "v"
-    
     stacks:
       images:
         registry: "lissto/"

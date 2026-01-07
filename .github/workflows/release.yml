@@ -83,7 +83,7 @@ jobs:
             
             ### What's Changed
             
-            See [CHANGELOG.md](https://github.com/lissto-dev/lissto/blob/main/lissto-helm/CHANGELOG.md) for details.
+            See [CHANGELOG.md](https://github.com/lissto-dev/lissto-helm/blob/main/CHANGELOG.md) for details.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -9,6 +9,10 @@ CRD_DEST_DIR := $(CHART_DIR)/templates/crds
 MANIFESTS_SOURCE_DIR := $(CONTROLLER_DIR)/config
 CHART_NAME := lissto
 NAMESPACE := lissto-system
+CONTROLLER_REPO := https://github.com/lissto-dev/controller.git
+
+# Allow version override: make update-crds VERSION=v0.1.14-rc1
+VERSION ?=
 
 # Colors for output
 COLOR_RESET := \033[0m
@@ -23,23 +27,46 @@ help: ## Show this help message
 	@echo "$(COLOR_BOLD)Available targets:$(COLOR_RESET)"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(COLOR_BLUE)%-20s$(COLOR_RESET) %s\n", $$1, $$2}'
 
-update-crds: ## Update CRDs from controller directory
-	@echo "$(COLOR_BOLD)$(COLOR_GREEN)Updating CRDs...$(COLOR_RESET)"
-	@# First, generate CRDs in the controller directory
-	@cd $(CONTROLLER_DIR) && $(MAKE) manifests
-	@# Create CRD directory if it doesn't exist
-	@mkdir -p $(CRD_DEST_DIR)
-	@# Remove old CRDs
-	@rm -f $(CRD_DEST_DIR)/*.yaml
-	@# Copy new CRDs and wrap them with conditional
-	@for crd in $(CRD_SOURCE_DIR)/*.yaml; do \
+update-crds: ## Update CRDs from controller (default: latest stable, override with VERSION=vX.Y.Z)
+	@echo "$(COLOR_BOLD)$(COLOR_GREEN)Updating CRDs from controller...$(COLOR_RESET)"
+	@if [ -z "$(VERSION)" ]; then \
+		echo "  No VERSION specified, fetching latest stable release..."; \
+		CONTROLLER_VERSION=$$(git ls-remote --tags $(CONTROLLER_REPO) | \
+			grep -v '\^{}' | \
+			grep -v -E '(rc|alpha|beta|dev)' | \
+			awk '{print $$2}' | \
+			sed 's|refs/tags/||' | \
+			sort -V | \
+			tail -1); \
+	else \
+		CONTROLLER_VERSION="$(VERSION)"; \
+		echo "  Using specified version: $$CONTROLLER_VERSION"; \
+	fi; \
+	echo "  Controller version: $$CONTROLLER_VERSION"; \
+	TMP_DIR=$$(mktemp -d); \
+	echo "  Cloning controller repository..."; \
+	if ! git clone --depth 1 --branch $$CONTROLLER_VERSION $(CONTROLLER_REPO) $$TMP_DIR 2>&1 | grep -v "Cloning into"; then \
+		echo "$(COLOR_YELLOW)  Failed to clone $$CONTROLLER_VERSION$(COLOR_RESET)"; \
+		rm -rf $$TMP_DIR; \
+		exit 1; \
+	fi; \
+	echo "  Generating CRDs..."; \
+	cd $$TMP_DIR && $(MAKE) manifests > /dev/null 2>&1; \
+	echo "  Cleaning old CRDs..."; \
+	rm -rf $(CRD_DEST_DIR); \
+	mkdir -p $(CRD_DEST_DIR); \
+	echo "  Copying new CRDs..."; \
+	for crd in $$TMP_DIR/config/crd/bases/*.yaml; do \
 		filename=$$(basename $$crd); \
-		echo "  Copying $$filename..."; \
+		echo "    - $$filename (from $$CONTROLLER_VERSION)"; \
 		echo "{{- if .Values.crds.install }}" > $(CRD_DEST_DIR)/$$filename; \
 		cat $$crd >> $(CRD_DEST_DIR)/$$filename; \
 		echo "{{- end }}" >> $(CRD_DEST_DIR)/$$filename; \
-	done
-	@echo "$(COLOR_GREEN)✓ CRDs updated successfully$(COLOR_RESET)"
+	done; \
+	echo "  Cleaning up temporary directory..."; \
+	rm -rf $$TMP_DIR; \
+	echo "$(COLOR_GREEN)✓ CRDs updated successfully from $$CONTROLLER_VERSION$(COLOR_RESET)"; \
+	echo "$(COLOR_YELLOW)  Remember to commit: git add templates/crds/ && git commit -m \"Update CRDs from controller $$CONTROLLER_VERSION\"$(COLOR_RESET)"
 
 update-manifests: update-crds ## Update all manifests (CRDs and other resources)
 	@echo "$(COLOR_BOLD)$(COLOR_GREEN)Updating manifests...$(COLOR_RESET)"
