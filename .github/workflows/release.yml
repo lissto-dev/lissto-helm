@@ -61,9 +61,8 @@ jobs:
 
       - name: Checkout gh-pages
         run: |
-          git fetch origin gh-pages || git checkout --orphan gh-pages
-          git checkout gh-pages || git checkout --orphan gh-pages
-          git pull origin gh-pages || true
+          git fetch origin gh-pages
+          git checkout gh-pages
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
