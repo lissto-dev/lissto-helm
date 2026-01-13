@@ -3,6 +3,29 @@ entries:
   lissto:
   - apiVersion: v2
     appVersion: latest
+    created: "2026-01-13T00:55:32.77366217Z"
+    description: A Helm chart for Lissto - Kubernetes stack management platform
+    digest: 683f3edbebd9ce9f8db577c06cfb76e8e128cfcfe6b2737012783c856072e83d
+    home: https://github.com/lissto-dev/lissto-helm
+    keywords:
+    - lissto
+    - kubernetes
+    - stack-management
+    - compose
+    maintainers:
+    - email: team@lissto.dev
+      name: Lissto Team
+    name: lissto
+    sources:
+    - https://github.com/lissto-dev/controller
+    - https://github.com/lissto-dev/api
+    - https://github.com/lissto-dev/slack-bot
+    type: application
+    urls:
+    - https://github.com/lissto-dev/lissto-helm/releases/download/v0.1.15-rc1/lissto-0.1.15-rc1.tgz
+    version: 0.1.15-rc1
+  - apiVersion: v2
+    appVersion: latest
     created: "2026-01-07T01:59:52.593703711Z"
     description: A Helm chart for Lissto - Kubernetes stack management platform
     digest: 59d6a2569943119f11a1127c53d31195145752ad7e35000563b24d1a3c8462a9
@@ -139,4 +162,4 @@ entries:
     urls:
     - https://github.com/lissto-dev/lissto-helm/releases/download/v0.1.0/lissto-0.1.0.tgz
     version: 0.1.0
-generated: "2026-01-07T01:59:52.592064654Z"
+generated: "2026-01-13T00:55:32.772295495Z"
