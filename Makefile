@@ -51,7 +51,7 @@ update-crds: ## Update CRDs from controller (default: latest stable, override wi
 		exit 1; \
 	fi; \
 	echo "  Generating CRDs..."; \
-	cd $$TMP_DIR && $(MAKE) manifests > /dev/null 2>&1; \
+	(cd $$TMP_DIR && $(MAKE) manifests > /dev/null 2>&1); \
 	echo "  Cleaning old CRDs..."; \
 	rm -rf $(CRD_DEST_DIR); \
 	mkdir -p $(CRD_DEST_DIR); \
