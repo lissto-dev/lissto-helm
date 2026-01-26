@@ -65,6 +65,10 @@ controller:
   rbac:
     create: true
   
+  # Metrics RBAC (for exposing /metrics endpoint securely)
+  metrics:
+    enabled: false
+  
   # Node selector
   nodeSelector: {}
   

@@ -1,4 +1,4 @@
-.PHONY: help update-crds update-manifests validate lint install uninstall package clean
+.PHONY: help update update-crds update-manifests validate lint install uninstall package clean
 
 # Variables
 CONTROLLER_DIR := ../controller
@@ -11,7 +11,7 @@ CHART_NAME := lissto
 NAMESPACE := lissto-system
 CONTROLLER_REPO := https://github.com/lissto-dev/controller.git
 
-# Allow version override: make update-crds VERSION=v0.1.14-rc1
+# Allow version override: make update VERSION=v0.1.14-rc1
 VERSION ?=
 
 # Colors for output
@@ -27,17 +27,11 @@ help: ## Show this help message
 	@echo "$(COLOR_BOLD)Available targets:$(COLOR_RESET)"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(COLOR_BLUE)%-20s$(COLOR_RESET) %s\n", $$1, $$2}'
 
-update-crds: ## Update CRDs from controller (default: latest stable, override with VERSION=vX.Y.Z)
-	@echo "$(COLOR_BOLD)$(COLOR_GREEN)Updating CRDs from controller...$(COLOR_RESET)"
+update: ## Update CRDs and RBAC from controller (default: main branch, override with VERSION=vX.Y.Z)
+	@echo "$(COLOR_BOLD)$(COLOR_GREEN)Updating CRDs and RBAC from controller...$(COLOR_RESET)"
 	@if [ -z "$(VERSION)" ]; then \
-		echo "  No VERSION specified, fetching latest stable release..."; \
-		CONTROLLER_VERSION=$$(git ls-remote --tags $(CONTROLLER_REPO) | \
-			grep -v '\^{}' | \
-			grep -v -E '(rc|alpha|beta|dev)' | \
-			awk '{print $$2}' | \
-			sed 's|refs/tags/||' | \
-			sort -V | \
-			tail -1); \
+		echo "  No VERSION specified, using main branch..."; \
+		CONTROLLER_VERSION="main"; \
 	else \
 		CONTROLLER_VERSION="$(VERSION)"; \
 		echo "  Using specified version: $$CONTROLLER_VERSION"; \
@@ -45,13 +39,15 @@ update-crds: ## Update CRDs from controller (default: latest stable, override wi
 	echo "  Controller version: $$CONTROLLER_VERSION"; \
 	TMP_DIR=$$(mktemp -d); \
 	echo "  Cloning controller repository..."; \
-	if ! git clone --depth 1 --branch $$CONTROLLER_VERSION $(CONTROLLER_REPO) $$TMP_DIR 2>&1 | grep -v "Cloning into"; then \
+	if ! git clone --depth 1 --branch $$CONTROLLER_VERSION $(CONTROLLER_REPO) $$TMP_DIR > /dev/null 2>&1; then \
 		echo "$(COLOR_YELLOW)  Failed to clone $$CONTROLLER_VERSION$(COLOR_RESET)"; \
 		rm -rf $$TMP_DIR; \
 		exit 1; \
 	fi; \
-	echo "  Generating CRDs..."; \
-	(cd $$TMP_DIR && $(MAKE) manifests > /dev/null 2>&1); \
+	echo "  Generating CRDs from Go types..."; \
+	if ! (cd $$TMP_DIR && make manifests > /dev/null 2>&1); then \
+		echo "$(COLOR_YELLOW)  Warning: make manifests failed, using committed CRDs$(COLOR_RESET)"; \
+	fi; \
 	echo "  Cleaning old CRDs..."; \
 	rm -rf $(CRD_DEST_DIR); \
 	mkdir -p $(CRD_DEST_DIR); \
@@ -63,14 +59,28 @@ update-crds: ## Update CRDs from controller (default: latest stable, override wi
 		cat $$crd >> $(CRD_DEST_DIR)/$$filename; \
 		echo "{{- end }}" >> $(CRD_DEST_DIR)/$$filename; \
 	done; \
+	echo "  Updating RBAC from controller..."; \
+	if [ -f $$TMP_DIR/config/rbac/role.yaml ]; then \
+		RBAC_RULES=$$(sed -n '/^rules:/,$$p' $$TMP_DIR/config/rbac/role.yaml); \
+		printf '%s\n' '{{- if and .Values.controller.enabled .Values.controller.rbac.create }}' > $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		printf '%s\n' 'apiVersion: rbac.authorization.k8s.io/v1' >> $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		printf '%s\n' 'kind: ClusterRole' >> $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		printf '%s\n' 'metadata:' >> $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		printf '%s\n' '  name: {{ include "lissto.fullname" . }}-controller-manager' >> $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		printf '%s\n' '  labels:' >> $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		printf '%s\n' '    {{- include "lissto.controller.labels" . | nindent 4 }}' >> $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		echo "$$RBAC_RULES" >> $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		printf '%s\n' '{{- end }}' >> $(CHART_DIR)/templates/controller/clusterrole.yaml; \
+		echo "    - clusterrole.yaml updated"; \
+	fi; \
 	echo "  Cleaning up temporary directory..."; \
 	rm -rf $$TMP_DIR; \
-	echo "$(COLOR_GREEN)✓ CRDs updated successfully from $$CONTROLLER_VERSION$(COLOR_RESET)"; \
-	echo "$(COLOR_YELLOW)  Remember to commit: git add templates/crds/ && git commit -m \"Update CRDs from controller $$CONTROLLER_VERSION\"$(COLOR_RESET)"
+	echo "$(COLOR_GREEN)✓ CRDs and RBAC updated successfully from $$CONTROLLER_VERSION$(COLOR_RESET)"; \
+	echo "$(COLOR_YELLOW)  Remember to commit: git add templates/crds/ templates/controller/clusterrole.yaml && git commit -m \"Update manifests from controller $$CONTROLLER_VERSION\"$(COLOR_RESET)"
 
-update-manifests: update-crds ## Update all manifests (CRDs and other resources)
-	@echo "$(COLOR_BOLD)$(COLOR_GREEN)Updating manifests...$(COLOR_RESET)"
-	@echo "$(COLOR_GREEN)✓ Manifests updated successfully$(COLOR_RESET)"
+update-crds: update ## Alias for 'update' (deprecated, use 'make update')
+
+update-manifests: update ## Alias for 'update' (deprecated, use 'make update')
 
 validate: ## Validate the Helm chart
 	@echo "$(COLOR_BOLD)$(COLOR_BLUE)Validating Helm chart...$(COLOR_RESET)"

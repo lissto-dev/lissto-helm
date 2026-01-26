@@ -1,0 +1,16 @@
+{{- if and .Values.controller.enabled .Values.controller.rbac.create .Values.controller.metrics.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "lissto.fullname" . }}-metrics-auth
+  labels:
+    {{- include "lissto.controller.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "lissto.fullname" . }}-metrics-auth
+subjects:
+- kind: ServiceAccount
+  name: {{ include "lissto.fullname" . }}-controller
+  namespace: {{ include "lissto.namespace" . }}
+{{- end }}

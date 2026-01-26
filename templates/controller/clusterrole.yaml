@@ -17,18 +17,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - events
   verbs:
   - create
@@ -37,19 +25,8 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
+  - secrets
   - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
   verbs:
   - create
   - delete
@@ -71,13 +48,23 @@ rules:
   - update
   - watch
 - apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - env.lissto.dev
   resources:
   - blueprints
   - envs
-  - lisstosecrets
-  - lisstovariables
-  - stacklifecycles
+  - lifecycles
   - stacks
   verbs:
   - create
@@ -91,7 +78,7 @@ rules:
   - env.lissto.dev
   resources:
   - blueprints/finalizers
-  - stacklifecycles/finalizers
+  - lifecycles/finalizers
   - stacks/finalizers
   verbs:
   - update
@@ -100,14 +87,21 @@ rules:
   resources:
   - blueprints/status
   - envs/status
-  - lisstosecrets/status
-  - lisstovariables/status
-  - stacklifecycles/status
+  - lifecycles/status
   - stacks/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - env.lissto.dev
+  resources:
+  - lisstosecrets
+  - lisstovariables
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -121,4 +115,3 @@ rules:
   - update
   - watch
 {{- end }}
-
